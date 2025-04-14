@@ -1,0 +1,291 @@
+blueprint:
+  name: HAMMER – Home Assistant Moonraker Messaging & Event Relay
+  description: >
+    Sends notifications for 3D printer events via Discord, Alexa, mobile, and HA UI using Moonraker sensors.
+    Now with fuzzy logic for more reliable progress updates — no helpers required v1.3.7.2
+  domain: automation
+
+  input:
+    friendly_name:
+      name: Printer Friendly Name
+      default: Neptune Max
+      selector:
+        text: {}
+      description: Name used in notifications.
+
+    sensor_base:
+      name: Base Sensor Prefix
+      default: neptune_max
+      selector:
+        text: {}
+      description: Used to generate entity names from Moonraker (e.g., sensor.neptune_max_progress). See README if unsure.
+
+    main_sensor:
+      name: Main Printer Status Sensor
+      default: sensor.neptune_max_current_print_state
+      selector:
+        entity:
+          domain: sensor
+      description: Sensor reporting current printer state (printing, paused, idle, etc).
+
+    progress_sensor:
+      name: Progress Sensor
+      default: sensor.neptune_max_progress
+      selector:
+        entity:
+          domain: sensor
+      description: Moonraker's percentage progress sensor.
+
+    camera_thumbnail:
+      name: Thumbnail Camera
+      default: camera.neptune_max_thumbnail
+      selector:
+        entity:
+          domain: camera
+      description: Virtual G-code preview thumbnail camera.
+
+    camera_webcam:
+      name: Webcam Camera
+      default: camera.neptune_max_webcam
+      selector:
+        entity:
+          domain: camera
+      description: Optional real-time webcam view.
+
+    progress_update_percent:
+      name: Progress Update Interval (%)
+      default: "5"
+      selector:
+        select:
+          options: ["1", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50"]
+      description: Send updates at this interval. Fuzzy logic accounts for skipped values. Short jobs may miss updates.
+
+    disable_progress_non_critical:
+      name: Disable Progress Alerts (Mobile/Persistent)
+      default: false
+      selector:
+        boolean: {}
+      description: Suppress mobile/persistent alerts for progress (still allows start/pause/finish).
+
+    enable_persistent_notification:
+      name: Enable Persistent Notification
+      default: true
+      selector:
+        boolean: {}
+      description: Shows messages in Home Assistant's UI notification tray.
+
+    persistent_notification_title:
+      name: Persistent Notification Title
+      default: "3D Printer Alert"
+      selector:
+        text: {}
+      description: Title shown in HA persistent notification box.
+
+    enable_mobile_notifications:
+      name: Enable Mobile Notifications
+      default: true
+      selector:
+        boolean: {}
+      description: Pushes alerts to your mobile app.
+
+    mobile_notification_entity:
+      name: Mobile Notification Service
+      default: notify.mobile_app_shawn_cell
+      selector:
+        text: {}
+      description: Notify target (e.g., notify.mobile_app_iphone).
+
+    enable_discord_notifications:
+      name: Enable Discord Notifications
+      default: false
+      selector:
+        boolean: {}
+      description: Sends messages to Discord using a shell command. See README for setup instructions.
+
+    enable_discord_snapshot:
+      name: Include Snapshot in Discord
+      default: true
+      selector:
+        boolean: {}
+      description: Attaches a snapshot image with Discord messages.
+
+    enable_alexa_notifications:
+      name: Enable Alexa Notifications
+      default: true
+      selector:
+        boolean: {}
+      description: Speaks alerts via Alexa text-to-speech.
+
+    alexa_notification_entity:
+      name: Alexa Notification Service
+      default: notify.alexa_media_3d_printer_notification_group
+      selector:
+        text: {}
+      description: Notification target for Alexa (group or device).
+
+    time_after:
+      name: Alexa Notifications Start Time
+      default: "09:00:00"
+      selector:
+        time:
+      description: Earliest time Alexa is allowed to speak.
+
+    time_before:
+      name: Alexa Notifications End Time
+      default: "23:59:00"
+      selector:
+        time:
+      description: Latest time Alexa will speak notifications.
+
+trigger:
+  - platform: state
+    entity_id: !input main_sensor
+    from: [idle, standby, completed, error]
+    to: printing
+    id: started
+
+  - platform: state
+    entity_id: !input main_sensor
+    from: paused
+    to: printing
+    id: resumed
+
+  - platform: state
+    entity_id: !input main_sensor
+    to: paused
+    id: paused
+
+  - platform: state
+    entity_id: !input main_sensor
+    from: printing
+    to: [idle, standby, completed, error]
+    id: finished
+
+  - platform: state
+    entity_id: !input progress_sensor
+    id: progress
+
+condition:
+  - condition: or
+    conditions:
+      - condition: trigger
+        id: started
+      - condition: trigger
+        id: resumed
+      - condition: trigger
+        id: finished
+      - condition: trigger
+        id: paused
+      - condition: template
+        value_template: >
+          {% set value = states(progress_sensor) | int(0) %}
+          {% set interval = progress_update_percent | int %}
+          {% set remainder = value % interval %}
+          {{ value > 0 and (remainder <= 1 or remainder >= interval - 1) }}
+
+variables:
+  printer_name: !input friendly_name
+  printer_slug: "{{ printer_name | replace(' ', '_') }}"
+  snapshot_filename: "{{ printer_slug }}_snapshot.jpg"
+  sensor_base: !input sensor_base
+  progress_sensor: !input progress_sensor
+  current_layer_sensor: "sensor.{{ sensor_base }}_current_layer"
+  total_layer_sensor: "sensor.{{ sensor_base }}_total_layer"
+  enable_discord_notifications: !input enable_discord_notifications
+  enable_discord_snapshot: !input enable_discord_snapshot
+  enable_persistent_notification: !input enable_persistent_notification
+  persistent_notification_title: !input persistent_notification_title
+  enable_mobile_notifications: !input enable_mobile_notifications
+  mobile_notification_entity: !input mobile_notification_entity
+  disable_progress_non_critical: !input disable_progress_non_critical
+  enable_alexa_notifications: !input enable_alexa_notifications
+  alexa_notification_entity: !input alexa_notification_entity
+  time_after: !input time_after
+  time_before: !input time_before
+  progress_update_percent: !input progress_update_percent
+  discord_message: >-
+    {% if trigger.id == 'paused' %}
+      ⏸️ Print Job Paused on {{ printer_name }}!
+    {% elif trigger.id == 'resumed' %}
+      🔄 Print Job Resumed on {{ printer_name }}!
+    {% elif trigger.id == 'started' %}
+      🖨️ Print Job Started on {{ printer_name }}! 📄 File: {{ states('sensor.' ~ sensor_base ~ '_filename') }} 🕒 Started At: {{ now().strftime('%H:%M:%S') }}
+    {% elif trigger.id == 'progress' %}
+      {% set pct = states(progress_sensor) | int(0) %}
+      📢 Printing Progress on {{ printer_name }}: {{ pct }}% ETA: {% set total_minutes = (states('sensor.' ~ sensor_base ~ '_print_time_left') | float(0) * 60) | round %}{% set hours = total_minutes // 60 %}{% set minutes = total_minutes % 60 %}{{ hours }}h {{ minutes }}m
+    {% elif trigger.id == 'finished' %}
+      🏁Print Job Completed on {{ printer_name }}!  🧵 Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m  🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
+    {% endif %}
+
+action:
+  - delay: "00:00:01"
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: started
+        sequence:
+          - service: camera.snapshot
+            target:
+              entity_id: !input camera_thumbnail
+            data:
+              filename: "/config/www/{{ snapshot_filename }}"
+      - conditions:
+          - condition: trigger
+            id: resumed
+        sequence:
+          - service: camera.snapshot
+            target:
+              entity_id: !input camera_webcam
+            data:
+              filename: "/config/www/{{ snapshot_filename }}"
+      - conditions:
+          - condition: template
+            value_template: "{{ enable_discord_snapshot }}"
+        sequence:
+          - service: camera.snapshot
+            target:
+              entity_id: !input camera_webcam
+            data:
+              filename: "/config/www/{{ snapshot_filename }}"
+  - delay: "00:00:02"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ enable_discord_notifications }}"
+        sequence:
+          - service: shell_command.printer_notify_webhook
+            data:
+              message: "{{ discord_message }}"
+              snapshot_filename: "{{ snapshot_filename }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ enable_persistent_notification and not (disable_progress_non_critical and trigger.id == 'progress') }}"
+        sequence:
+          - service: persistent_notification.create
+            data:
+              title: "{{ persistent_notification_title }}"
+              message: "{{ discord_message }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ enable_mobile_notifications and not (disable_progress_non_critical and trigger.id == 'progress') }}"
+        sequence:
+          - service: "{{ mobile_notification_entity }}"
+            data:
+              message: "{{ discord_message }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ enable_alexa_notifications and (now().strftime('%H:%M:%S') >= time_after) and (now().strftime('%H:%M:%S') <= time_before) }}
+        sequence:
+          - service: "{{ alexa_notification_entity }}"
+            data:
+              message: >
+                {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
+              data:
+                type: announce
+
+mode: queued
+max: 10
