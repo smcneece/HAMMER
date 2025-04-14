@@ -1,0 +1,9 @@
+{
+  "name": "HAMMER – Home Assistant Moonraker Messaging & Event Relay",
+  "description": "Blueprint that sends Moonraker printer alerts via Discord, Alexa, mobile, and HA UI. Easy to customize. Fuzzy logic for smarter updates.",
+  "domain": "hammer",
+  "author": "smcneece",
+  "codeowners": ["@smcneece"],
+  "blueprint_type": "automation",
+  "source": "github://smcneece/HAMMER"
+}
