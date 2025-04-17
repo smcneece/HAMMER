@@ -19,7 +19,7 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 - ⏰ **Time-Restricted Alexa Announcements**
 - 🎯 **Custom Progress Intervals**
 - 🧵 **Filament Used (Per Job + Lifetime)**
-- 🧩 Collapsible UI Sections – Clean, organized input groups for painless config and less scrolling hell.
+- 🧩 **Collapsible UIl.**
 
 ---
 
@@ -48,7 +48,7 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 - Home Assistant
 - [HACS](https://hacs.xyz/docs/setup/download)
 - [Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration)
-- [Moonraker Integration](https://github.com/na1vi/home-assistant-moonraker)
+- [Moonraker Integration](https://github.com/marcolivierarsenault/moonraker-home-assistant)
 
 ---
 
@@ -88,7 +88,7 @@ To get update notifications:
 - More completion stats
 - Filament-out detection
 - Text-only alert fallback
-- Snapshot history
+- Custom Scripts for triggers
 - Toggle webcam/thumbnail
 - HACS store submission
 
