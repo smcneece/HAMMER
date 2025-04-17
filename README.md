@@ -19,7 +19,7 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 - ⏰ **Time-Restricted Alexa Announcements**
 - 🎯 **Custom Progress Intervals**
 - 🧵 **Filament Used (Per Job + Lifetime)**
-- 🧩 **Collapsible UIl.**
+- 🧩 **Collapsible UI**
 
 ---
 
@@ -49,6 +49,46 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 - [HACS](https://hacs.xyz/docs/setup/download)
 - [Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration)
 - [Moonraker Integration](https://github.com/marcolivierarsenault/moonraker-home-assistant)
+
+---
+
+### 🔧 Discord Notification Setup (Optional)
+
+Want notifications in Discord? You gotta set up a webhook and a shell command:
+
+#### Step 1: Create a Discord Webhook
+1. Open Discord and go to **Server Settings → Integrations**.
+2. Click **New Webhook**.
+3. Choose a channel and click **Copy Webhook URL**.
+
+#### Step 2: Add the Shell Command to Home Assistant
+
+In your `shell_commands.yaml`:
+
+```yaml
+printer_notify_webhook: >
+  curl -X POST -F "payload_json={"content": "{{ message }}"}" -F "file=@/config/www/{{ snapshot_filename }}" https://discord.com/api/webhooks/your_webhook_here
+```
+
+Replace the URL with your real webhook. 
+Do **not** quote the full URL.
+
+Then add or make sure this exists in `configuration.yaml`:
+
+```yaml
+shell_command: !include shell_commands.yaml
+```
+
+#### Optional Debugging
+
+To debug the message content instead of sending to Discord, try this:
+
+```yaml
+log_discord_payload: >
+  echo {{ message }} > /config/www/debug_webhook_payload.txt
+```
+
+Change the blueprint shell command to `log_discord_payload` for testing.
 
 ---
 
