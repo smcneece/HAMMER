@@ -241,9 +241,9 @@ variables:
         {% elif trigger.id == 'started' %}
           🖨️ Print Job Started on {{ printer_name }}! 📄 File: {{ states('sensor.' ~ sensor_base ~ '_filename') }} 🕒 Started At: {{ now().strftime('%H:%M:%S') }}
         {% elif trigger.id == 'progress' %}
-          📢 {{ printer_name }} Progress: {{ pct }}% complete.
+          📢 {{ printer_name }} Progress: {{ pct }}% complete. 🧵 Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m
         {% elif trigger.id == 'finished' %}
-          🏁Print Job Completed on {{ printer_name }}!  🧵 Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m  🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
+          🏁 Print Job Completed on {{ printer_name }}!   🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
         {% endif %}
 
 action:
