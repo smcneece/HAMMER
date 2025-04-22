@@ -24,10 +24,10 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 📸 Example Alerts
 
 **Print Started (Discord)**  
-![Print Start](images/print_start.png)
+![Print Start](images/print-start.png)
 
 **Print Finished (Discord)**  
-![Print Finished](images/print_finished.png)
+![Print Finished](images/print-finished.png)
 
 
 🧠 TL;DR – Read This Before Filing Issues
