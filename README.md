@@ -29,6 +29,7 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 **Print Finished (Discord)**  
 ![Print Finished](images/print_finished.png)
 
+
 🧠 TL;DR – Read This Before Filing Issues
 
     Fully modular — supports multiple printers with unique sensors
