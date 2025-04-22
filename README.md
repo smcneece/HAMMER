@@ -21,6 +21,11 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
     🧹 Collapsible UI
     🔧 Optional Script Execution for Events (start, finish, error, filament-out)
 
+
+#### Collapsible UI:
+
+![Print Start](images/ui-setup.png)
+
 📸 Example Alerts
 
 **Print Started (Discord)**  
