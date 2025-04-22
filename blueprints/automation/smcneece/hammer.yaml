@@ -1,11 +1,14 @@
 blueprint:
   name: HAMMER – Home Assistant Moonraker Messaging & Event Relay
+  homeassistant:
+    min_version: 2024.6.0
   description: >
     Sends notifications for 3D printer events via Discord, Alexa, mobile, and HA UI using Moonraker sensors.
     Includes strict + fuzzy progress detection logic, layered notifications, and custom snapshot support. \n
     ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. v1.3.7.5
   domain: automation
   input:
+
     printer_config:
       name: Printer Setup
       icon: mdi:printer-3d
@@ -40,6 +43,14 @@ blueprint:
             entity:
               domain: sensor
           description: Moonraker's percentage progress sensor.
+        filament_sensor:
+          name: Filament Sensor
+          default: binary_sensor.neptune_max_fila
+          selector:
+            entity:
+              domain: binary_sensor
+          description: Binary sensor that goes OFF when filament runs out.
+
 
     camera_config:
       name: Camera Settings
@@ -157,6 +168,40 @@ blueprint:
             time: {}
           description: Latest time Alexa will speak notifications.
 
+    script_hooks:
+      name: Script Hooks
+      icon: mdi:code-braces
+      collapsed: true
+      input:
+        on_print_start_script:
+          name: On Print Start Script
+          default: ""
+          selector:
+            entity:
+              domain: script
+          description: Optional script to run when a print job starts.
+        on_print_finish_script:
+          name: On Print Finish Script
+          default: ""
+          selector:
+            entity:
+              domain: script
+          description: Optional script to run when a print job finishes.
+        on_filament_out_script:
+          name: On Filament Out Script
+          default: ""
+          selector:
+            entity:
+              domain: script
+          description: Optional script to run when filament runs out.
+        on_error_script:
+          name: On Error Script
+          default: ""
+          selector:
+            entity:
+              domain: script
+          description: Optional script to run when the printer enters an error state.
+
 trigger:
   - platform: state
     entity_id: !input main_sensor
@@ -181,6 +226,13 @@ trigger:
     to: [idle, standby, completed, error]
     id: finished
 
+
+  - platform: state
+    entity_id: !input filament_sensor
+    from: 'on'
+    to: 'off'
+    id: filament_out
+
   - platform: state
     entity_id: !input progress_sensor
     id: progress
@@ -196,6 +248,8 @@ condition:
         id: finished
       - condition: trigger
         id: paused
+      - condition: trigger
+        id: filament_out
       - condition: template
         value_template: >
           {% set value = states(progress_sensor) | int(0) %}
@@ -240,10 +294,12 @@ variables:
           🔄 Print Job Resumed on {{ printer_name }}!
         {% elif trigger.id == 'started' %}
           🖨️ Print Job Started on {{ printer_name }}! 📄 File: {{ states('sensor.' ~ sensor_base ~ '_filename') }} 🕒 Started At: {{ now().strftime('%H:%M:%S') }}
+        {% elif trigger.id == 'filament_out' %}
+          🚫 Filament Runout Detected on {{ printer_name }}! Job Paused. Reload filament and resume the print.
         {% elif trigger.id == 'progress' %}
           📢 {{ printer_name }} Progress: {{ pct }}% complete. 🧵 Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m
         {% elif trigger.id == 'finished' %}
-          🏁 Print Job Completed on {{ printer_name }}!   🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
+          🏁 Print Job Completed on {{ printer_name }}!  🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
         {% endif %}
 
 action:
@@ -312,9 +368,38 @@ action:
           - service: "{{ alexa_notification_entity }}"
             data:
               message: >
-                {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
+                {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'filament_out' %}Filament runout detected on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
               data:
                 type: announce
 
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: started
+        sequence:
+          - service: script.turn_on
+            data:
+              entity_id: !input on_print_start_script
+      - conditions:
+          - condition: trigger
+            id: finished
+        sequence:
+          - service: script.turn_on
+            data:
+              entity_id: !input on_print_finish_script
+      - conditions:
+          - condition: trigger
+            id: filament_out
+        sequence:
+          - service: script.turn_on
+            data:
+              entity_id: !input on_filament_out_script
+      - conditions:
+          - condition: trigger
+            id: error
+        sequence:
+          - service: script.turn_on
+            data:
+              entity_id: !input on_error_script
 mode: queued
 max: 10
