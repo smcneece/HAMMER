@@ -4,8 +4,8 @@ blueprint:
     min_version: 2024.6.0
   description: >
     Sends notifications for 3D printer events via Discord, Alexa, mobile, and HA UI using Moonraker sensors.
-    Includes strict + fuzzy progress detection logic, layered notifications, and custom snapshot support. \n
-    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. v1.3.7.5
+    Includes strict + fuzzy progress detection logic, layered notifications, and custom snapshot support.
+    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. v1.4
   domain: automation
   input:
 
