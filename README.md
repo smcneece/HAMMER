@@ -1,6 +1,6 @@
 # 🔨 HAMMER – Home Assistant Moonraker Messaging & Event Relay
 
-> 🔖 Version: **v1.4.0**
+> 🔖 Version: **v1.4.3**
 
 This project was born out of a simple frustration: I missed being able to watch and share my 3D printer's progress with friends and family in our Discord hobby channel. OctoPrint handled this beautifully, but it doesn’t work with Klipper-based printers. So I built this—starting with Discord alerts, and then expanding into mobile, Alexa, persistent notifications, and more. What began as a fix for one missing feature became a full-featured alert system for any Klipper printer running Moonraker.
 
@@ -231,7 +231,7 @@ If you don't touch anything else, you'll still be fine. But hey, more toys = mor
 
 ## 📜 Changelog
 
-**v1.4.0**
+**v1.4.3**
 
 - 🧵 Filament runout detection now sends alerts AND can run scripts  
 - 🧰 Added optional script triggers for all major printer events (start, finish, error, filament-out)  
