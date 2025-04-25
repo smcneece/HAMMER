@@ -135,42 +135,61 @@ To get update notifications:
 
 ### 🔍 Finding Your Mobile & Alexa Notify Entities
 
-> ⚠️ Developer Tools → Services no longer shows notify services as of recent Home Assistant updates. Here's the new reliable method:
+> ⚠️ Developer Tools → Services no longer shows notify services. Here’s how to reliably find your notify entities (mobile, Alexa, etc) using the UI:
 
-The `notify.` domain is funky and doesn’t always show up in the **Entities** list. Here’s the best way to find the right names:
+The `notify.` services do not appear under regular “Entities” — they only show up when adding an action in an automation.
+
+---
 
 #### 📱 Mobile App Notify Entity
+
 1. Go to **Settings → Automations & Scenes → Create Automation**
-2. Choose **Create New Automation**
-3. Scroll to the **Then Do** section and click **Add Action**
-4. Choose **Call Service**, then start typing `notify.mobile_app_`
-5. You should see something like:
+2. Click **Create a new automation**
+3. Scroll down to **Then Do** and click **Add Action**
+4. In the search bar, type part of your mobile device name or `mobile_app`
+5. Select your device, such as `notify.mobile_app_shawn_cell`
+6. Click the **three dots → Edit in YAML**
+7. You’ll see something like:
+   ```yaml
+   action: notify.mobile_app_shawn_cell
    ```
-   notify.mobile_app_shawn_cell
+8. Copy the value after `action:` and paste it into the blueprint.
+
+---
+
+#### 🗣️ Alexa Notify Entity
+
+**Make sure Alexa Media Player is installed and configured.**
+
+1. Go to **Settings → Automations & Scenes → Create Automation**
+2. Click **Create a new automation**
+3. Scroll down to **Then Do** and click **Add Action**
+4. In the search bar, type part of your Alexa device name or `alexa_media`
+5. Select your device, such as `notify.alexa_media_echoclockdot`
+6. Click the **three dots → Edit in YAML**
+7. You’ll see something like:
+   ```yaml
+   action: notify.alexa_media_echoclockdot
    ```
-6. That’s your mobile notification target.
+8. Copy the value after `action:` and paste it into the blueprint.
 
-🗣️ Alexa Notify Entity
-Make sure Alexa Media Player is installed and set up.
-Go to Settings → Automations & Scenes → Create Automation
-Create a new automation, Scroll to "Then Do", choose Add Action,
-and search for: notify.alexa_media_, Look for your Alexa device and click on it.
-Once you do that click the 3 dots and pick edit in yaml, you'll see your device
-in the action:.
+💡 *Want multiple Echos to announce together?*  
+Use a group notify like `notify.alexa_media_everywhere`.
 
-notify.alexa_media_living_room_echo
-notify.alexa_media_3d_printer_notification_group
+📌 *To create speaker groups in the Alexa app:*
 
-    Use the group name if you want multiple Echos to yell at you at once.
+1. Open the Alexa app
+2. Tap **Devices**
+3. Tap the **“+” icon → Combine Speakers**
+4. Choose **Multi-Room Music**
+5. Pick your Echo devices and name the group
+6. It will appear as:  
+   `notify.alexa_media_<group_name>`
 
-    🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
+---
 
-notify.alexa_media_living_room_echo
-notify.alexa_media_3d_printer_notification_group
-
-    Use the group name if you want multiple Echos to yell at you at once.
-
-    🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
+✅ This method works for **all notify services** — mobile, Alexa, email, etc.  
+Goal: **Add Action → Search → Select → Edit YAML → Copy `action:`**
 
 ---
 
