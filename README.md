@@ -18,7 +18,6 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 - 😹 **Toggle-Based Controls**
 - ⏰ **Time-Restricted Alexa Announcements**
 - 🎯 **Custom Progress Intervals**
-- 🧵 **Filament Used (Per Job + Lifetime)**
 - 🧹 **Collapsible UI**
 
 ---
