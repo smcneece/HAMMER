@@ -187,13 +187,6 @@ notify.alexa_media_3d_printer_notification_group
 
     🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
 
-notify.alexa_media_living_room_echo
-notify.alexa_media_3d_printer_notification_group
-
-    Use the group name if you want multiple Echos to yell at you at once.
-
-    🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
-
 ---
 
 ### 🧾 Example UI with Collapsible Sections
