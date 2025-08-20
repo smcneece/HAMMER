@@ -1,5 +1,7 @@
 # 🔨 HAMMER – Home Assistant Moonraker Messaging & Event Relay
 
+![HAMMER Blueprint](images/social-preview.png)
+
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/smcneece/HAMMER)](https://github.com/smcneece/HAMMER/releases)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/y/smcneece/HAMMER.svg)](https://github.com/smcneece/HAMMER/commits/main)
 [![GitHub](https://img.shields.io/github/license/smcneece/HAMMER)](LICENSE)
@@ -60,17 +62,17 @@ By default, the Moonraker integration polls your printer every 30 seconds for st
 
 ## 💥 Core Features
 
-- 📢 **Discord Notifications**
-- 🗣️ **Alexa Voice Alerts**
-- 📱 **Mobile Notifications**
-- 🖥️ **Persistent Home Assistant Notifications**
-- 🔥 **Bed Warming Notifications**
-- 📷 **Snapshot & Thumbnail Support**
-- 😹 **Toggle-Based Controls**
-- ⏰ **Time-Restricted Alexa Announcements**
-- 🎯 **Custom Progress Intervals**
-- 🧵 **Filament Used (Per Job + Lifetime)**
-- 🧹 **Collapsible UI**
+- Discord Notifications
+- Alexa Voice Alerts
+- Mobile Notifications
+- Persistent Home Assistant Notifications
+- Bed Warming Notifications
+- Snapshot & Thumbnail Support
+- Toggle-Based Controls
+- Time-Restricted Alexa Announcements
+- Custom Progress Intervals
+- Filament Used (Per Job + Lifetime)
+- Collapsible UI
 
 ---
 
@@ -263,16 +265,16 @@ If you don't touch anything else, you'll still be fine. But hey, more toys = mor
 
 **v2025.8.4**
 
-- ⚡ **Entity Auto-Discovery**: Base sensor name now auto-extracted from main sensor selection
-- 📝 **Enhanced Setup Guide**: Added helpful examples throughout configuration UI
-- 🎯 **Simplified Configuration**: Removed manual base sensor typing requirement
-- 🔧 **Smart Templates**: Automatic entity name building with fallback support
+- Entity Auto-Discovery: Base sensor name now auto-extracted from main sensor selection
+- Enhanced Setup Guide: Added helpful examples throughout configuration UI
+- Simplified Configuration: Removed manual base sensor typing requirement
+- Smart Templates: Automatic entity name building with fallback support
 
 **v1.4.0**
 
-- 🧵 Filament runout detection now sends alerts AND can run scripts  
-- 🧰 Added optional script triggers for all major printer events (start, finish, error, filament-out)  
-- 🗃️ Blueprint UI groups reorganized (collapsible input sections)
+- Filament runout detection now sends alerts AND can run scripts  
+- Added optional script triggers for all major printer events (start, finish, error, filament-out)  
+- Blueprint UI groups reorganized (collapsible input sections)
 
 ## 🏷️ GitHub Repo Tags
 ```
