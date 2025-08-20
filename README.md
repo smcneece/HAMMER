@@ -71,6 +71,10 @@ By default, the Moonraker integration polls your printer every 30 seconds for st
 
 ## 🛠️ Prerequisites
 
+- **Home Assistant**
+- **[Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration)**
+- **[Moonraker Integration](https://github.com/marcolivierarsenault/moonraker-home-assistant)**
+
 **⚠️ Entity Naming Required – READ THIS ⚠️**
 
 Before you do anything else, rename your printer's device in Home Assistant:
@@ -94,10 +98,6 @@ camera.neptune_max_thumbnail
 ```
 
 If your sensors are not named this way, rename them in Home Assistant to follow this format before using the blueprint. This is required even if you only have **one** printer.
-
-- Home Assistant
--- [Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration)
-- [Moonraker Integration](https://github.com/marcolivierarsenault/moonraker-home-assistant)
 
 ---
 
@@ -172,20 +172,24 @@ The `notify.` domain is funky and doesn’t always show up in the **Entities** l
    ```
 6. That’s your mobile notification target.
 
-🗣️ Alexa Notify Entity
+#### 🗣️ Alexa Notify Entity
+
 Make sure Alexa Media Player is installed and set up.
-Go to Settings → Automations & Scenes → Create Automation
-Create a new automation, Scroll to "Then Do", choose Add Action,
-and search for: notify.alexa_media_, Look for your Alexa device and click on it.
-Once you do that click the 3 dots and pick edit in yaml, you'll see your device
-in the action:.
 
-notify.alexa_media_living_room_echo
-notify.alexa_media_3d_printer_notification_group
+1. Go to **Settings → Automations & Scenes → Create Automation**
+2. Create a new automation, scroll to **"Then Do"**, choose **Add Action**
+3. Search for: `notify.alexa_media_`
+4. Look for your Alexa device and click on it
+5. Click the **3 dots** and pick **edit in yaml**
+6. You'll see your device in the `action:` field
 
-    Use the group name if you want multiple Echos to yell at you at once.
+**Examples:**
+- `notify.alexa_media_living_room_echo`
+- `notify.alexa_media_3d_printer_notification_group`
 
-    🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
+**Tip:** Use the group name if you want multiple Echos to yell at you at once.
+
+🧠 You can also create Alexa announcement groups in the Alexa app for easier control.
 
 ---
 
