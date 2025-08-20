@@ -3,8 +3,8 @@ blueprint:
   homeassistant:
     min_version: 2024.6.0
   description: "Sends notifications for 3D printer events via Discord, Alexa, mobile, and HA UI using Moonraker sensors.
-    Includes strict + fuzzy progress detection logic, layered notifications, and custom snapshot support. \n\n
-    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. ⚠️\n\n v2025.8.3"
+    Features automatic base sensor extraction from main sensor, strict + fuzzy progress detection logic, layered notifications, and custom snapshot support. \n\n
+    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. ⚠️\n\n v2025.8.4"
   domain: automation
   input:
 
@@ -18,14 +18,7 @@ blueprint:
           default: Neptune Max
           selector:
             text: {}
-          description: Name used in notifications.
-
-        sensor_base:
-          name: Base Sensor Prefix
-          default: neptune_max
-          selector:
-            text: {}
-          description: Used to generate entity names from Moonraker (e.g., sensor.neptune_max_progress).
+          description: "Name used in notifications."
 
         main_sensor:
           name: Main Printer Status Sensor
@@ -33,7 +26,7 @@ blueprint:
           selector:
             entity:
               domain: sensor
-          description: Sensor for printer state (printing, paused, idle, etc).
+          description: "Sensor for printer state (printing, paused, idle, etc). Base name auto-extracted for other sensors."
 
         progress_sensor:
           name: Progress Sensor
@@ -41,14 +34,14 @@ blueprint:
           selector:
             entity:
               domain: sensor
-          description: Moonraker's percentage progress sensor.
+          description: "Moonraker's percentage progress sensor."
         filament_sensor:
           name: Filament Sensor
           default: binary_sensor.neptune_max_fila
           selector:
             entity:
               domain: binary_sensor
-          description: Binary sensor that goes OFF when filament runs out.
+          description: "Binary sensor that goes OFF when filament runs out."
 
 
     camera_config:
@@ -62,7 +55,7 @@ blueprint:
           selector:
             entity:
               domain: camera
-          description: G-code preview thumbnail camera.
+          description: "G-code preview thumbnail camera."
 
         camera_webcam:
           name: Webcam Camera
@@ -70,7 +63,7 @@ blueprint:
           selector:
             entity:
               domain: camera
-          description: Optional real-time webcam view.
+          description: "Optional real-time webcam view."
 
     progress_config:
       name: Progress Reporting
@@ -91,6 +84,51 @@ blueprint:
           selector:
             boolean: {}
           description: Suppress mobile/persistent alerts for progress (still allows start/pause/finish).
+
+        enable_bed_warming_notifications:
+          name: Enable Bed Warming Notifications
+          default: false
+          selector:
+            boolean: {}
+          description: "Notify when bed reaches target temperature and stays stable."
+
+        bed_warm_time_minutes:
+          name: Bed Warm Time (Minutes)
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 60
+              step: 1
+              unit_of_measurement: "minutes"
+          description: "How long bed must stay at target temp before notification."
+
+        bed_threshold_temp:
+          name: Bed Minimum Temperature
+          default: 59.0
+          selector:
+            number:
+              min: 30.0
+              max: 150.0
+              step: 0.5
+              unit_of_measurement: "°C"
+          description: "Minimum bed temperature to maintain (target minus tolerance). Set to target-1°C."
+
+        bed_temperature_sensor:
+          name: Bed Temperature Sensor
+          default: sensor.neptune_max_bed_temperature
+          selector:
+            entity:
+              domain: sensor
+          description: "Current bed temperature sensor."
+
+        bed_target_sensor:
+          name: Bed Target Sensor
+          default: number.neptune_max_bed_target
+          selector:
+            entity:
+              domain: number
+          description: "Bed target temperature sensor."
 
     notification_config:
       name: Notifications
@@ -123,7 +161,7 @@ blueprint:
           default: notify.mobile_app_shawn_cell
           selector:
             text: {}
-          description: Notify service for mobile alerts.
+          description: "Notify service for mobile alerts."
 
         enable_discord_notifications:
           name: Enable Discord Notifications
@@ -151,7 +189,7 @@ blueprint:
           default: notify.alexa_media_3d_printer_notification_group
           selector:
             text: {}
-          description: Notification target for Alexa.
+          description: "Notification target for Alexa."
 
         time_after:
           name: Alexa Notifications Start Time
@@ -201,6 +239,10 @@ blueprint:
               domain: script
           description: Optional script to run when the printer enters an error state.
 
+trigger_variables:
+  main_sensor_entity: !input main_sensor
+  sensor_base: "{{ main_sensor_entity.split('_current_print_state')[0].split('.')[1] if '_current_print_state' in main_sensor_entity else main_sensor_entity.split('.')[1].split('_')[0] + '_' + main_sensor_entity.split('.')[1].split('_')[1] }}"
+
 trigger:
   - platform: state
     entity_id: !input main_sensor
@@ -240,6 +282,13 @@ trigger:
     entity_id: !input progress_sensor
     id: progress
 
+  - platform: numeric_state
+    entity_id: !input bed_temperature_sensor
+    above: !input bed_threshold_temp
+    for:
+      minutes: !input bed_warm_time_minutes
+    id: bed_ready
+
 condition:
   - condition: or
     conditions:
@@ -255,6 +304,8 @@ condition:
         id: error
       - condition: trigger
         id: filament_out
+      - condition: trigger
+        id: bed_ready
       - condition: template
         value_template: >
           {% set value = states(progress_sensor) | int(0) %}
@@ -267,7 +318,8 @@ variables:
   printer_name: !input friendly_name
   printer_slug: "{{ printer_name | replace(' ', '_') }}"
   snapshot_filename: "{{ printer_slug }}_snapshot.jpg"
-  sensor_base: !input sensor_base
+  main_sensor_entity: !input main_sensor
+  sensor_base: "{{ main_sensor_entity.split('_current_print_state')[0].split('.')[1] if '_current_print_state' in main_sensor_entity else main_sensor_entity.split('.')[1].split('_')[0] + '_' + main_sensor_entity.split('.')[1].split('_')[1] }}"
   progress_sensor: !input progress_sensor
   current_layer_sensor: "sensor.{{ sensor_base }}_current_layer"
   total_layer_sensor: "sensor.{{ sensor_base }}_total_layer"
@@ -283,6 +335,10 @@ variables:
   time_after: !input time_after
   time_before: !input time_before
   progress_update_percent: !input progress_update_percent
+  enable_bed_warming_notifications: !input enable_bed_warming_notifications
+  bed_warm_time_minutes: !input bed_warm_time_minutes
+  bed_temperature_sensor: !input bed_temperature_sensor
+  bed_target_sensor: !input bed_target_sensor
   on_print_start_script: !input on_print_start_script
   on_print_finish_script: !input on_print_finish_script
   on_filament_out_script: !input on_filament_out_script
@@ -308,6 +364,8 @@ variables:
       📢 {{ printer_name }} Progress: {{ pct }}% complete. 🧵 Filament Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m
     {% elif trigger.id == 'finished' %}
       🏁 Print Job Completed on {{ printer_name }}!  🎖 Lifetime Filament: {{ states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) }}m ({{ (states('sensor.' ~ sensor_base ~ '_totals_filament_used') | float(0) * 0.000621371) | round(2) }} mi)  Lifetime Print Time: {{ states('sensor.' ~ sensor_base ~ '_totals_print_time') }}
+    {% elif trigger.id == 'bed_ready' %}
+      🔥 Bed Ready on {{ printer_name }}! Temperature: {{ states(bed_temperature_sensor) | round(1) }}°C (Target: {{ states(bed_target_sensor) | round(1) }}°C) - Stable for {{ bed_warm_time_minutes }} minutes. Ready to print!
     {% endif %}
 
 action:
@@ -378,7 +436,7 @@ action:
             - service: "{{ alexa_notification_entity }}"
               data:
                 message: >
-                  {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'filament_out' %}Filament runout detected on {{ printer_name }}.{% elif trigger.id == 'error' %}Print error detected on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
+                  {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'filament_out' %}Filament runout detected on {{ printer_name }}.{% elif trigger.id == 'error' %}Print error detected on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% elif trigger.id == 'bed_ready' %}Bed ready on {{ printer_name }}. Temperature stable at {{ states(bed_temperature_sensor) | round(1) }} degrees.{% endif %}
                 data:
                   type: announce
 

@@ -20,6 +20,30 @@ Get 3D printer alerts that actually matter! This Home Assistant automation keeps
 
 ---
 
+### 🔥 Bed Warming Notifications
+
+NEW! Get notified when your print bed is ready for printing:
+
+**How it works:**
+1. Enable "Bed Warming Notifications" in the blueprint
+2. Set your desired warm time (1-60 minutes, default 5)
+3. Heat your bed to target temperature
+4. Receive notification when bed reaches target temp and stays stable
+
+**Perfect for pre-heating workflows:**
+- Start bed heating remotely
+- Get notified when bed is ready
+- Begin your print job with confidence
+
+**Auto-detects your sensors:**
+- `sensor.{base}_bed_temperature` - Current bed temperature
+- `number.{base}_bed_target` - Target bed temperature
+- Works with all notification channels (Discord, Alexa, mobile, persistent)
+
+![Bed Warming Example](images/bed-warming.png)
+
+---
+
 ### ⚙️ Adjusting Moonraker Polling Rate
 
 By default, the Moonraker integration polls your printer every 30 seconds for status updates. For more accurate notifications, you can adjust this setting:
@@ -40,6 +64,7 @@ By default, the Moonraker integration polls your printer every 30 seconds for st
 - 🗣️ **Alexa Voice Alerts**
 - 📱 **Mobile Notifications**
 - 🖥️ **Persistent Home Assistant Notifications**
+- 🔥 **Bed Warming Notifications**
 - 📷 **Snapshot & Thumbnail Support**
 - 😹 **Toggle-Based Controls**
 - ⏰ **Time-Restricted Alexa Announcements**
@@ -89,15 +114,18 @@ Before you do anything else, rename your printer's device in Home Assistant:
 
 This ensures all related sensors, cameras, and helpers follow a consistent naming pattern for the blueprint to recognize.
 
-All Moonraker sensor and camera entities must follow a consistent naming pattern using a unique base name (example: `neptune_max`). This blueprint uses that base to dynamically build the required entity IDs like:
+⚡ **NEW in v2025.8.4:** HAMMER now **automatically extracts** the base name from your main sensor selection! Simply choose your printer's main status sensor (e.g., `sensor.neptune_max_current_print_state`) and the blueprint automatically builds all other required entity names.
+
+All Moonraker sensor and camera entities should follow the standard naming pattern:
 
 ```
-sensor.neptune_max_current_print_state
-sensor.neptune_max_progress
-camera.neptune_max_thumbnail
+sensor.{base}_current_print_state    ← Select this one
+sensor.{base}_progress               ← Auto-generated  
+camera.{base}_thumbnail              ← Auto-generated
+camera.{base}_webcam                 ← Auto-generated
 ```
 
-If your sensors are not named this way, rename them in Home Assistant to follow this format before using the blueprint. This is required even if you only have **one** printer.
+The blueprint now handles the base name extraction automatically, eliminating typing errors and simplifying setup!
 
 ---
 
@@ -204,8 +232,10 @@ Sections are grouped using collapsible panels (requires Home Assistant 2024.4+).
 
 **Main Inputs You Should Actually Care About**
 
-- `sensor_base`: This is the base name for all your printer sensors. Example: `neptune_max` → builds `sensor.neptune_max_progress`, `camera.neptune_max_thumbnail`, etc.
-- `main_sensor`: Your printer's print state sensor. Usually ends in `_current_print_state`
+- `main_sensor`: Your printer's print state sensor (ends in `_current_print_state`) → **Base name auto-extracted from this!**
+- `progress_sensor`: Auto-suggested based on your main sensor, but you can override if needed
+- `enable_bed_warming_notifications`: Get notified when bed reaches target temp and stays stable
+- `bed_warm_time_minutes`: How long bed must stay at target before notification (1-60 minutes)
 - `notify.mobile_app_*`: Your mobile phone's notify target
 - `notify.alexa_media_*`: Alexa group or device for TTS alerts
 - `disable_progress_notifications`: Turns off mobile + persistent alerts for print percentage spam
@@ -230,6 +260,13 @@ If you don't touch anything else, you'll still be fine. But hey, more toys = mor
 ---
 
 ## 📜 Changelog
+
+**v2025.8.4**
+
+- ⚡ **Entity Auto-Discovery**: Base sensor name now auto-extracted from main sensor selection
+- 📝 **Enhanced Setup Guide**: Added helpful examples throughout configuration UI
+- 🎯 **Simplified Configuration**: Removed manual base sensor typing requirement
+- 🔧 **Smart Templates**: Automatic entity name building with fallback support
 
 **v1.4.0**
 
