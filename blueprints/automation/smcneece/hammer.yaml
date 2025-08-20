@@ -4,7 +4,7 @@ blueprint:
     min_version: 2024.6.0
   description: "Sends notifications for 3D printer events via Discord, Alexa, mobile, and HA UI using Moonraker sensors.
     Includes strict + fuzzy progress detection logic, layered notifications, and custom snapshot support. \n\n
-    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. ⚠️\n\n v1.4.3"
+    ⚠️ Please review all configuration sections carefully before skipping ahead. Some inputs rely on others. ⚠️\n\n v2025.8.3"
   domain: automation
   input:
 
@@ -113,7 +113,7 @@ blueprint:
 
         enable_mobile_notifications:
           name: Enable Mobile Notifications
-          default: true
+          default: false
           selector:
             boolean: {}
           description: Pushes alerts to mobile app.
@@ -222,9 +222,13 @@ trigger:
   - platform: state
     entity_id: !input main_sensor
     from: printing
-    to: [idle, standby, completed, error]
+    to: [idle, standby, complete, error]
     id: finished
 
+  - platform: state
+    entity_id: !input main_sensor
+    to: error
+    id: error
 
   - platform: state
     entity_id: !input filament_sensor
@@ -248,12 +252,15 @@ condition:
       - condition: trigger
         id: paused
       - condition: trigger
+        id: error
+      - condition: trigger
         id: filament_out
       - condition: template
         value_template: >
           {% set value = states(progress_sensor) | int(0) %}
-          {% set interval = (progress_update_percent | string) | regex_replace("[^0-9]", "") | int(1) %}
-          {% set match = value > 0 and (value % interval == 0) %}
+          {% set interval = progress_update_percent | int(1) %}
+          {% set remainder = value % interval %}
+          {% set match = value > 0 and (remainder == 0 or remainder == (interval - 1)) %}
           {{ match }}
 
 variables:
@@ -276,6 +283,10 @@ variables:
   time_after: !input time_after
   time_before: !input time_before
   progress_update_percent: !input progress_update_percent
+  on_print_start_script: !input on_print_start_script
+  on_print_finish_script: !input on_print_finish_script
+  on_filament_out_script: !input on_filament_out_script
+  on_error_script: !input on_error_script
   discord_message: >-
     {% set time_left = states('sensor.' ~ sensor_base ~ '_print_time_left') | float(0) %}
     {% set is_short_job = time_left < 0.5 %}
@@ -291,6 +302,8 @@ variables:
       🖨️ Print Job Started on {{ printer_name }}! 📄 File: {{ states('sensor.' ~ sensor_base ~ '_filename') }} 🕒 Started At: {{ now().strftime('%H:%M:%S') }}
     {% elif trigger.id == 'filament_out' %}
       🚫 Filament Runout Detected on {{ printer_name }}! Job Paused. Reload filament and resume the print.
+    {% elif trigger.id == 'error' %}
+      ⚠️ Print Error Detected on {{ printer_name }}! Check printer status immediately.
     {% elif trigger.id == 'progress' %}
       📢 {{ printer_name }} Progress: {{ pct }}% complete. 🧵 Filament Used: {{ states('sensor.' ~ sensor_base ~ '_filament_used') | float(0) }}m
     {% elif trigger.id == 'finished' %}
@@ -357,13 +370,15 @@ action:
   - choose: # Separate choose block for Alexa notifications
       - conditions:
           - condition: template
-            value_template: >
-              {{ enable_alexa_notifications and (now().strftime('%H:%M:%S') >= time_after) and (now().strftime('%H:%M:%S') <= time_before) }}
+            value_template: "{{ enable_alexa_notifications }}"
+          - condition: time
+            after: !input time_after
+            before: !input time_before
         sequence:
             - service: "{{ alexa_notification_entity }}"
               data:
                 message: >
-                  {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'filament_out' %}Filament runout detected on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
+                  {% if trigger.id == 'paused' %}Print job paused on {{ printer_name }}.{% elif trigger.id == 'resumed' %}Print job resumed on {{ printer_name }}.{% elif trigger.id == 'started' %}Print job started on {{ printer_name }}.{% elif trigger.id == 'filament_out' %}Filament runout detected on {{ printer_name }}.{% elif trigger.id == 'error' %}Print error detected on {{ printer_name }}.{% elif trigger.id == 'finished' %}Print job completed on {{ printer_name }}.{% endif %}
                 data:
                   type: announce
 
@@ -371,30 +386,38 @@ action:
       - conditions:
           - condition: trigger
             id: started
+          - condition: template
+            value_template: "{{ on_print_start_script != '' and states(on_print_start_script) != 'unavailable' }}"
         sequence:
           - service: script.turn_on
             data:
-              entity_id: !input on_print_start_script
+              entity_id: "{{ on_print_start_script }}"
       - conditions:
           - condition: trigger
             id: finished
+          - condition: template
+            value_template: "{{ on_print_finish_script != '' and states(on_print_finish_script) != 'unavailable' }}"
         sequence:
           - service: script.turn_on
             data:
-              entity_id: !input on_print_finish_script
+              entity_id: "{{ on_print_finish_script }}"
       - conditions:
           - condition: trigger
             id: filament_out
+          - condition: template
+            value_template: "{{ on_filament_out_script != '' and states(on_filament_out_script) != 'unavailable' }}"
         sequence:
           - service: script.turn_on
             data:
-              entity_id: !input on_filament_out_script
+              entity_id: "{{ on_filament_out_script }}"
       - conditions:
           - condition: trigger
             id: error
+          - condition: template
+            value_template: "{{ on_error_script != '' and states(on_error_script) != 'unavailable' }}"
         sequence:
           - service: script.turn_on
             data:
-              entity_id: !input on_error_script
+              entity_id: "{{ on_error_script }}"
 mode: queued
 max: 10
